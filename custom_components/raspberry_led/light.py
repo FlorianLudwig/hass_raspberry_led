@@ -1,4 +1,5 @@
 """Control LEDs on the raspberry"""
+from typing import Optional
 import logging
 
 import homeassistant.helpers.config_validation as cv
@@ -14,33 +15,36 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 
 class RpiLED(Light):
-    def __init__(self, color, path):
-        self.unique_id = f"rpi_led_{color}"
-        self._name = f"{color} LED"
+    def __init__(self, color:str, path:str):
+        self._color = color
         self._path = path
-        self._state = None
+        self._state:Optional[bool] = None
 
     @property
-    def name(self):
-        return self._name
+    def unique_id(self) -> str:
+        return f"rpi_led_{self._color}"
 
     @property
-    def is_on(self):
+    def name(self) -> str:
+        return f"{self._color} LED"
+
+    @property
+    def is_on(self) -> bool:
         return self._state
 
     @property
-    def path(self):
+    def path(self) -> str:
         return f"/sys/class/leds/{self._path}/brightness"
 
-    def turn_on(self, **kwargs):
+    def turn_on(self, **kwargs) -> None:
         with open(self.path, "w") as fd:
             fd.write("1")
 
-    def turn_off(self, **kwargs):
+    def turn_off(self, **kwargs) -> None:
         with open(self.path, "w") as fd:
             fd.write("0")
 
-    def update(self):
+    def update(self) -> None:
         with open(self.path) as fd:
             brightness = fd.read().strip()
             self._state = brightness != "0"
